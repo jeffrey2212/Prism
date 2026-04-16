@@ -1,197 +1,247 @@
-# WNACG Cosplay 自動化收集系統
+# Prism Gallery
 
-自動掃描、下載、去重 WNACG 寫真&Cosplay 分類的圖片集。
+🌈 A modern, self-hosted image gallery with automatic collection and infinite scroll.
 
 ---
 
-## 🎯 系統架構
+## ✨ Features
+
+### Gallery Web App
+- 🖼️ **Infinite Scroll** - Load images in batches for smooth browsing
+- 🎨 **Dark Theme** - Easy on the eyes
+- 🔍 **Smart Sorting** - Sort by date, image count, or name
+- 📍 **Position Memory** - Remember where you left off
+- 🔙 **Floating Navigation** - Quick back button
+- 💡 **Lightbox** - Click zones for prev/next, click to close
+
+### Auto Collector
+- 🤖 **Automatic Scanning** - Periodically scan for new content
+- 🔄 **Hybrid Strategy** - Collect new uploads + backfill old content
+- 🗄️ **Deduplication** - SQLite database prevents duplicates
+- 📊 **Progress Tracking** - Track collection progress
+- ⏰ **Cron Scheduled** - Runs automatically every 6 hours
+
+---
+
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Cron Job (每 6 小時)                        │
-│                 wnacg-cosplay-collector                     │
+│                    Cron Job (every 6h)                       │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              cosplay_collector.py                            │
-│  1. 掃描 cate-3（寫真&Cosplay）最新 3 頁                         │
-│  2. 使用 browser 工具提取 aid                                 │
-│  3. 檢查 SQLite 資料庫去重                                     │
-│  4. 下載新本子                                                │
-│  5. 更新資料庫                                                │
+│              Collection Script                               │
+│  1. Scan source pages                                        │
+│  2. Extract album IDs                                        │
+│  3. Check database for duplicates                            │
+│  4. Download new albums                                      │
+│  5. Update database                                          │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                   SQLite Database                            │
-│            ~/Downloads/wnacg/.downloaded.db                  │
-│         (記錄已下載的 aid，避免重複下載)                        │
+│         (Tracks downloaded albums, prevents duplicates)      │
 └─────────────────────┬───────────────────────────────────────┘
                       │
                       ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                Download Directory                            │
-│            ~/Downloads/wnacg/                                │
-│   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│   │ Album 1     │  │ Album 2     │  │ Album N     │        │
-│   │ (101 張)     │  │ (8 張)       │  │ (82 張)       │        │
-│   └─────────────┘  └─────────────┘  └─────────────┘        │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-                      ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Gallery Web App (PM2, Port 8081)                │
-│         http://localhost:8081                                │
+│                Gallery Web App                               │
+│              Flask + Vanilla JS                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📊 當前狀態
+## 🚀 Quick Start
 
-| 項目 | 數值 |
-|------|------|
-| 已下載本子 | 8 個 |
-| 總圖片數 | 414 張 |
-| 掃描頻率 | 每 6 小時 |
-| 掃描分類 | cate-3（寫真&Cosplay） |
-| 掃描頁數 | 3 頁 |
+### Prerequisites
 
----
-
-## 📁 目錄結構
-
-```
-~/Downloads/wnacg/
-├── .downloaded.db      # SQLite 資料庫
-├── .config.json        # 配置文件
-├── .log.txt            # 下載日誌
-├── Bomi - Officer 2B_354364/           (101 張)
-├── Puutin-2B Witch_355536/             (8 張)
-├── Yurihime - Elegg_355537/            (62 張)
-├── 屿鱼 - 天雨亚子同人护士_355446/       (31 張)
-├── Qiandai - Bunny 2B_355445/          (29 張)
-├── Natsuko 夏夏子 - NIKKE 布兰儿_355444/  (81 張)
-├── yuuhui - Jade Collection Twin Black_354370/ (20 張)
-└── Natsuko 夏夏子 - GRIDMAN 新条茜_355780/   (82 張) ← 新增！
-
-/home/jeff/papertowne/Manager/workspace/wnacg-gallery/
-├── app.py              # Gallery Web App
-├── cosplay_collector.py # Cosplay 自動化收集器
-├── README.md           # 本文件
-└── ...
-```
-
----
-
-## 🚀 使用方式
-
-### 手動掃描
 ```bash
-python3 /home/jeff/papertowne/Manager/workspace/wnacg-gallery/wnacg_scanner.py 3
+pip install -r requirements.txt
 ```
 
-### 查看統計
+### Start Gallery
+
 ```bash
-python3 /home/jeff/papertowne/Manager/workspace/wnacg-gallery/auto_collector.py stats
+python3 app.py --port 8080
 ```
 
-### 列出已下載
+Or with PM2:
+
 ```bash
-python3 /home/jeff/papertowne/Manager/workspace/wnacg-gallery/auto_collector.py list
+pm2 start app.py --name prism-gallery -- --port 8080
 ```
 
-### 手動觸發收集（測試用）
+### Run Collector
+
 ```bash
-# 直接在 Hermes 中運行 cron job
-hermes -c "cronjob run 71a6c5983d56"
+python3 cosplay_collector.py
+```
+
+### Setup Cron Job
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add (runs every 6 hours)
+0 */6 * * * cd /path/to/prism-gallery && python3 cosplay_collector.py
 ```
 
 ---
 
-## 📋 配置文件 (~/.Downloads/wnacg/.config.json)
+## 📁 Project Structure
 
-```json
-{
-  "scan_pages": 3,           // 每次掃描多少頁
-  "auto_download": true,     // 是否自動下載
-  "notify": true,            // 是否通知
-  "track_artists": [],       // 追蹤的畫師（未來功能）
-  "track_series": [],        // 追蹤的系列（未來功能）
-  "exclude_keywords": []     // 排除關鍵字（未來功能）
-}
+```
+prism-gallery/
+├── app.py                      # Flask web server
+├── cosplay_collector.py        # Auto collector script
+├── requirements.txt            # Python dependencies
+├── static/
+│   ├── css/style.css          # Dark theme styles
+│   └── js/main.js             # Frontend logic
+├── templates/
+│   ├── index.html             # Gallery home
+│   └── album.html             # Album detail view
+└── README.md
 ```
 
 ---
 
-## 🎯 去重機制
+## ⚙️ Configuration
 
-系統使用 **aid** (Album ID) 作為唯一標識：
+### Gallery Server
 
-1. 掃描時提取每個本子的 aid
-2. 檢查 SQLite 資料庫是否已存在
-3. 已存在 → 跳過
-4. 不存在 → 下載並記錄
+```bash
+python3 app.py --host 0.0.0.0 --port 8080 --debug
+```
 
-**即使刪除文件夾，資料庫仍會記錄**，避免重複下載。
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--host` | `0.0.0.0` | Server host |
+| `--port` | `8080` | Server port |
+| `--debug` | `false` | Enable debug mode |
+
+### Collector
+
+Edit `cosplay_collector.py` to configure:
+
+```python
+# New albums collection
+NEW_ALBUMS_PAGE = 1          # Scan page 1 for new uploads
+NEW_MAX_DOWNLOAD = 2         # Max 2 new albums per run
+
+# Old albums backfill
+OLD_ALBUMS_START_PAGE = 2    # Start from page 2
+OLD_ALBUMS_RANGE = 5         # Scan 5 pages per run
+OLD_MAX_DOWNLOAD = 2         # Max 2 old albums per run
+MAX_PAGES = 863              # Total pages to scan
+```
 
 ---
 
-## 📊 統計命令
+## 🎯 Key Features
+
+### Infinite Scroll
+
+- Loads images in batches (20 per batch)
+- Smooth scrolling experience
+- Loading indicator at bottom
+
+### Lightbox Navigation
+
+| Action | Result |
+|--------|--------|
+| Click left 30% | ← Previous image |
+| Click right 30% | → Next image |
+| Click image/background | Close lightbox |
+| Press ← / → | Navigate images |
+| Press Esc | Close lightbox |
+
+### Smart Sorting
+
+- 🕐 **Latest Upload** (default)
+- 📅 **Earliest Upload**
+- 🖼️ **Most Images**
+- 📄 **Fewest Images**
+- 🔤 **Name A-Z**
+- 🔠 **Name Z-A**
+
+### Position Memory
+
+- Remembers scroll position
+- Highlights last viewed album
+- Persists across page navigation
+
+---
+
+## 📊 Database Schema
+
+```sql
+CREATE TABLE downloaded (
+    aid INTEGER PRIMARY KEY,
+    title TEXT,
+    download_time TEXT,
+    image_count INTEGER,
+    folder_name TEXT
+);
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Gallery won't start
 
 ```bash
-# 查看已下載總數
-python3 auto_collector.py stats
+# Check dependencies
+pip install -r requirements.txt
 
-# 列出所有已下載（按 aid 排序）
-python3 auto_collector.py list
+# Check if port is in use
+lsof -i :8080
+```
 
-# 查看下載日誌
+### Collector not downloading
+
+```bash
+# Check logs
 tail -f ~/Downloads/wnacg/.log.txt
+
+# Test manually
+python3 cosplay_collector.py
 ```
 
----
+### Database issues
 
-## 🔧 故障排除
-
-### 問題：腳本無法運行
 ```bash
-# 安裝依賴
-pip install requests beautifulsoup4
-```
+# View downloaded albums
+sqlite3 ~/Downloads/wnacg/.downloaded.db "SELECT * FROM downloaded LIMIT 10"
 
-### 問題：資料庫損壞
-```bash
-# 刪除並重建
-rm ~/Downloads/wnacg/.downloaded.db
-python3 auto_collector.py stats  # 會自動重建
-```
-
-### 問題：想重新下載某個本子
-```bash
-# 從資料庫移除特定 aid
-sqlite3 ~/Downloads/wnacg/.downloaded.db "DELETE FROM downloaded WHERE aid=354364"
+# Remove specific album
+sqlite3 ~/Downloads/wnacg/.downloaded.db "DELETE FROM downloaded WHERE aid=12345"
 ```
 
 ---
 
-## 📝 日誌位置
+## 🛡️ .gitignore
 
-- **下載日誌：** `~/Downloads/wnacg/.log.txt`
-- **Cron 日誌：** `pm2 logs wnacg-auto-collector`
+The following are excluded from version control:
 
----
-
-## 🎉 當前狀態
-
-| 項目 | 數值 |
-|------|------|
-| 已下載本子 | 7 個 |
-| 總圖片數 | 332 張 |
-| 掃描頻率 | 每 6 小時 |
-| 掃描頁數 | 3 頁 |
+- Images and media files
+- SQLite database
+- Cache files (`__pycache__/`)
+- Logs
+- Configuration files with sensitive data
 
 ---
 
-**最後更新：** 2026-04-16
+## 📝 License
+
+MIT License - Feel free to use and modify.
+
+---
+
+**Built with:** Python • Flask • Vanilla JS • SQLite
