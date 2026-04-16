@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ album_name }} - WNACG Gallery</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Floating back button -->
+    <button id="floatingBack" class="floating-back" onclick="window.location.href='/'">
+        ← Back
+    </button>
+
+    <main class="container album-page">
+        <div id="albumHeader" class="album-header">
+            <h2>{{ album_name }}</h2>
+            <span class="count" id="imageCount">Loading...</span>
+        </div>
+
+        <div id="imageGrid" class="image-grid"></div>
+        
+        <!-- Loading indicator -->
+        <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+            Loading more images...
+        </div>
+    </main>
+
+    <!-- Hidden element to pass album name to JS -->
+    <div id="albumName" data-album="{{ album_name }}" style="display: none;"></div>
+    
+    <!-- Config for infinite scroll -->
+    <div id="scrollConfig" 
+         data-images-per-load="20"
+         style="display: none;"></div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox">
+        <button class="lightbox-close" id="closeBtn">&times;</button>
+        <img id="lightboxImg" src="" alt="">
+        <!-- Click zones for navigation -->
+        <div class="lightbox-zone left-zone" id="leftZone"></div>
+        <div class="lightbox-zone right-zone" id="rightZone"></div>
+    </div>
+
+    <script src="/static/js/main.js?v=4"></script>
+</body>

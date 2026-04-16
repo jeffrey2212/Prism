@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WNACG Gallery</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=3">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>📚 WNACG Gallery</h1>
+            <div class="header-controls">
+                <!-- Sorting dropdown -->
+                <select id="sortSelect" class="sort-select" title="Sort by">
+                    <option value="aid_desc">🕐 最新上傳</option>
+                    <option value="aid_asc">📅 最早上傳</option>
+                    <option value="count_desc">🖼️ 圖片最多</option>
+                    <option value="count_asc">📄 圖片最少</option>
+                    <option value="name_asc">🔤 名稱 A-Z</option>
+                    <option value="name_desc">🔠 名稱 Z-A</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="album-info">
+            <span id="albumCount" class="album-count"></span>
+        </div>
+        <div id="albumGrid" class="album-grid"></div>
+        
+        <!-- Back to top button -->
+        <button id="backToTop" class="back-to-top" title="Back to top">↑ Top</button>
+    </main>
+
+    <script src="/static/js/main.js?v=2"></script>
+</body>
+</html>

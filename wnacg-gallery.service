@@ -1,0 +1,15 @@
+[Unit]
+Description=WNACG Gallery Web Server
+After=network.target
+
+[Service]
+Type=simple
+User=jeff
+WorkingDirectory=/home/jeff/papertowne/Manager/workspace/wnacg-gallery
+Environment="PATH=/home/jeff/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/home/jeff/papertowne/Manager/workspace/wnacg-gallery/start.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
