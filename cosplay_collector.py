@@ -167,25 +167,12 @@ def scan_page(page_num):
         return [], True
 
 def download_album(url):
-    """下載單一本子，使用 browser 工具"""
-    from hermes_tools import browser_navigate, browser_get_images
-    
+    """下載單一本子，使用 requests 提取圖片 URL"""
     try:
-        # 訪問頁面
-        nav_result = browser_navigate(url=url)
-        if not nav_result.get('success'):
-            log(f"❌ 無法訪問頁面：{url}")
-            return None
-        
-        title = nav_result.get('title', 'unknown')
-        clean_title = re.sub(r'\s*-\s*列表.*$', '', title)
-        clean_title = re.sub(r'\s*-\s*紳士漫畫.*$', '', clean_title)
-        
-        # 清理文件名
-        clean_title = re.sub(r'[<>:"/\\|？*]', '', clean_title)
-        clean_title = re.sub(r'\s+', ' ', clean_title).strip()
-        if len(clean_title) > 100:
-            clean_title = clean_title[:100]
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://wnacg.com/'
+        }
         
         # 提取 aid
         aid_match = re.search(r'aid-(\d+)', url)
@@ -193,16 +180,39 @@ def download_album(url):
             return None
         aid = int(aid_match.group(1))
         
-        # 獲取圖片 - 使用 browser 工具
-        images_result = browser_get_images()
-        if not images_result.get('success'):
-            log(f"❌ 無法獲取圖片：aid={aid}")
+        # 獲取圖片 URL 列表 - 從 photos-item 頁面提取
+        item_url = f"https://wnacg.com/photos-item-aid-{aid}.html"
+        response = requests.get(item_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        # 提取 page_url 數組
+        match = re.search(r'"page_url":\s*\[(.*?)\]', response.text)
+        if not match:
+            log(f"❌ 無法提取圖片 URL：aid={aid}")
             return None
         
-        images = images_result.get('images', [])
-        if not images:
+        # 解析圖片 URL
+        urls_str = match.group(1)
+        image_urls = re.findall(r'"([^"]+)"', urls_str)
+        
+        if not image_urls:
             log(f"❌ 未找到圖片：aid={aid}")
             return None
+        
+        # 獲取標題 - 從 slide 頁面
+        slide_response = requests.get(url, headers=headers, timeout=30)
+        slide_response.raise_for_status()
+        soup = BeautifulSoup(slide_response.text, 'html.parser')
+        title_elem = soup.find('title')
+        title = title_elem.get_text(strip=True) if title_elem else f'Unknown_{aid}'
+        clean_title = re.sub(r'\s*-\s*列表.*$', '', title)
+        clean_title = re.sub(r'\s*-\s*紳士漫畫.*$', '', clean_title)
+        
+        # 清理文件名
+        clean_title = re.sub(r'[<>"\/\\|？*]', '', clean_title)
+        clean_title = re.sub(r'\s+', ' ', clean_title).strip()
+        if len(clean_title) > 100:
+            clean_title = clean_title[:100]
         
         # 創建文件夾
         folder_name = f"{clean_title}_{aid}"
@@ -211,17 +221,13 @@ def download_album(url):
         
         # 下載圖片
         downloaded = 0
-        headers = ['-A', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', '-e', 'https://wnacg.com/', '-H', 'Referer: https://wnacg.com/']
-        for i, img in enumerate(images, 1):
-            src = img.get('src', '')
-            if not src:
-                continue
-            
+        curl_headers = ['-A', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', '-e', 'https://wnacg.com/', '-H', 'Referer: https://wnacg.com/']
+        for i, src in enumerate(image_urls, 1):
             filename = src.split('/')[-1]
             filepath = download_dir / filename
             
             try:
-                cmd = ['curl', '-s', '-o', str(filepath)] + headers + [src]
+                cmd = ['curl', '-s', '-o', str(filepath)] + curl_headers + [src]
                 result = subprocess.run(cmd, capture_output=True, timeout=60)
                 if result.returncode == 0 and filepath.exists() and filepath.stat().st_size > 0:
                     downloaded += 1

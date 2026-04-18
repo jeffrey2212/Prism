@@ -27,6 +27,7 @@ def get_aid_from_name(album_name):
 
 def get_albums():
     """掃描並返回所有 album 列表"""
+    from urllib.parse import quote
     albums = []
     if not os.path.exists(IMAGE_DIR):
         return albums
@@ -36,7 +37,10 @@ def get_albums():
         if os.path.isdir(album_path):
             images = get_album_images(name)
             if images:
-                cover = f"/images/{name}/{images[0]}" if images else None
+                # 對 path segments 做 URL encoding，避免特殊字元 (#, [, ], 中文等) 破掉瀏覽器 URL 解析
+                encoded_name = quote(name, safe='')
+                encoded_filename = quote(images[0], safe='')
+                cover = f"/images/{encoded_name}/{encoded_filename}" if images else None
                 albums.append({
                     "name": name,
                     "cover": cover,
